@@ -216,6 +216,7 @@ static asar_error_mapping asar_errors[] =
 	{ ERR(pullbase_without_pushbase), "pullbase without matching pushbase." },
 
 	{ ERR(invalid_math), "Invalid math command." },
+	{ ERR(invalid_gigacom_ext), "Invalid gigacom_ext command. Expected on or off." },
 	{ ERR(invalid_warn), "Invalid warn command." },
 	{ ERR(invalid_check), "Invalid check command." },
 

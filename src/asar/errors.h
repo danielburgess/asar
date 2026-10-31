@@ -189,6 +189,7 @@ enum asar_error_id : int
 	error_id_pullbase_without_pushbase,
 
 	error_id_invalid_math,
+	error_id_invalid_gigacom_ext,
 	error_id_invalid_warn,
 	error_id_invalid_check,
 

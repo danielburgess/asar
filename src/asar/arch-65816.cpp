@@ -20,6 +20,27 @@ extern bool fastrom;
 #define giga (arch==arch_65832)
 extern int recent_opcode_num;
 
+// 65832 page 3: '@' marks a PC-relative operand
+enum { pcrel_none, pcrel_r16, pcrel_r16x, pcrel_r16y, pcrel_ind, pcrel_indl, pcrel_indx };
+static int pcrel_form(const char * p, string& inner)
+{
+	static const struct { const char * l; const char * r; int form; } forms[] = {
+		{ "(@", ",x)", pcrel_indx }, { "(@", ")", pcrel_ind }, { "[@", "]", pcrel_indl },
+		{ "@", ",x", pcrel_r16x }, { "@", ",y", pcrel_r16y }, { "@", "", pcrel_r16 },
+	};
+	int n = (int)strlen(p);
+	for (const auto& f : forms)
+	{
+		int ll = (int)strlen(f.l), rl = (int)strlen(f.r);
+		if (n > ll + rl && stribegin(p, f.l) && striend(p, f.r))
+		{
+			inner = substr(p + ll, n - ll - rl);
+			return f.form;
+		}
+	}
+	return pcrel_none;
+}
+
 bool asblock_65816(char** word, int numwords, bool fake, int& outlen)
 {
 #define is(test) (!stricmpwithupper(word[0], test))
@@ -61,6 +82,14 @@ bool asblock_65816(char** word, int numwords, bool fake, int& outlen)
 #define asp_rel2(op, byte) if (is(op)) { int pos=(!foundlabel)?(int)num:(int)num-((snespos&0xFFFFFF)+4); withlen(3); write1(0x42u); write1((unsigned int)byte); write2((unsigned int)pos);\
 											if (pass==2 && foundlabel && (pos<-32768 || pos>32767)) asar_throw_error(2, error_type_block, error_id_relative_branch_out_of_bounds, dec(pos).data()); \
 											return true; }
+// disp16 from the end of an n-byte instruction
+#define pcrel_disp(n) ((!foundlabel)?(int)num:(int)num-((snespos&0xFFFFFF)+(n)))
+#define pcrel_check(pos) if (pass==2 && foundlabel && (pos<-32768 || pos>32767)) asar_throw_error(2, error_type_block, error_id_relative_branch_out_of_bounds, dec(pos).data())
+// page 3: $42 $42 + page-1 opcode + disp16
+#define aspr(   op, byte) if (is(op)) { int pos=pcrel_disp(5); withlen(4); write1(0x42u); write1(0x42u); write1((unsigned int)byte); write2((unsigned int)pos); pcrel_check(pos); return true; }
+// page 2 with disp16: LEA, PEL
+#define asp2r(  op, byte) if (is(op)) { int pos=pcrel_disp(4); withlen(3); write1(0x42u); write1((unsigned int)byte); write2((unsigned int)pos); pcrel_check(pos); return true; }
+#define asp2(   op, byte) if (is(op) && (len==2 || (!explicitlen && len<2))) { withlen(3); write1(0x42u); write1((unsigned int)byte); write2(num); return true; }
 #define as0_p2( op, byte) if (is(op)) { withlen(1); write1(0x42u); write1((unsigned int)byte); return true; }
 #define as_rep( op, byte) if (is(op)) { if (pass<2 && !fake) { num=getnum(par); } if(foundlabel) asar_throw_error(0, error_type_block, error_id_no_labels_here); withlen(0); for (unsigned int i=0;i<num;i++) { write1((unsigned int)byte); } recent_opcode_num = num; return true; }
 #define as_rel1(op, byte) if (is(op)) { int pos=(!foundlabel)?(int)num:(int)num-((snespos&0xFFFFFF)+2); withlen(1); write1((unsigned int)byte); write1((unsigned int)pos); \
@@ -105,6 +134,48 @@ bool asblock_65816(char** word, int numwords, bool fake, int& outlen)
 		//as0("TAS", 0x1B); as0("TSA", 0x3B); as0("SWA", 0xEB);                  //actually, it does: it may make some users think it's correct.
 		end();
 	}
+	else if (giga && gigacom_ext && pcrel_form(word[1], par) != pcrel_none)
+	{
+		int form = pcrel_form(word[1], par);
+		if (word[0][3]=='.') asar_throw_error(0, error_type_block, error_id_invalid_opcode_length);
+		num = (pass==2 && !fake) ? getnum(par) : 0;
+		len = 2; explicitlen = false;
+		if (form == pcrel_r16)
+		{
+			the8(0x0D, pr);
+			thenext8(0x0E, pr);
+			thefinal7(0x0C, pr);
+			aspr("STZ", 0x9C);
+			aspr("JSR", 0x20);
+			as_rel2("JMP", 0x82);
+			asp2r("LEA", 0x82);
+			asp2r("PEL", 0x83);
+		}
+		else if (form == pcrel_r16x)
+		{
+			the8(0x1D, pr);
+			thenext8(0x1E, pr);
+			aspr("STZ", 0x9E);
+		}
+		else if (form == pcrel_r16y)
+		{
+			the8(0x19, pr);
+			aspr("LDX", 0xBE);
+		}
+		else if (form == pcrel_ind)
+		{
+			aspr("JMP", 0x6C);
+		}
+		else if (form == pcrel_indl)
+		{
+			aspr("JMP", 0xDC); aspr("JML", 0xDC);
+		}
+		else if (form == pcrel_indx)
+		{
+			aspr("JMP", 0x7C); aspr("JSR", 0xFC);
+		}
+		end();
+	}
 	else if (!stricmp(word[1], "A"))
 	{
 		blankinit();
@@ -147,6 +218,7 @@ bool asblock_65816(char** word, int numwords, bool fake, int& outlen)
 		init_index("(", ",x)");
 		the8(0x01, 1);
 		as2("JMP", 0x7C); as2("JSR", 0xFC);
+		if (giga && gigacom_ext) asp2("JSL", 0xFC);
 		end();
 	}
 	else if (match("(", ")") && confirmqpar(substr(word[1]+1, (int)(strlen(word[1]+1)-1))))

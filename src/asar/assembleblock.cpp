@@ -15,6 +15,7 @@
 #include "arch-shared.h"
 
 int arch=arch_65816;
+bool gigacom_ext=false;
 
 int snespos;
 int realsnespos;
@@ -762,6 +763,7 @@ void initstuff()
 
 	math_pri=false;
 	math_round=true;
+	gigacom_ext=false;
 
 	if (arch_is_65816_family(arch)) asinit_65816();
 	if (arch==arch_spc700) asinit_spc700();
@@ -2664,6 +2666,12 @@ void assembleblock(const char * block, bool isspecialline)
 			return;
 		}
 		if (!stricmp(par, "superfx")) { arch=arch_superfx; return; }
+	}
+	else if (is1("gigacom_ext"))
+	{
+		if (!stricmp(par, "on")) gigacom_ext=true;
+		else if (!stricmp(par, "off")) gigacom_ext=false;
+		else asar_throw_error(0, error_type_block, error_id_invalid_gigacom_ext);
 	}
 	else if (is2("math"))
 	{

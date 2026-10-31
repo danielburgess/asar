@@ -4,6 +4,7 @@ enum { arch_65816, arch_spc700, arch_spc700_inline, arch_superfx, arch_65832 };
 // 65816 opcode table, with or without the GigaCom 65832 extension
 inline bool arch_is_65816_family(int a) { return a==arch_65816 || a==arch_65832; }
 extern int arch;
+extern bool gigacom_ext; // 65832 phase-3 forms: no core implements them yet
 
 bool assemblemapper(char** word, int numwords);
 
