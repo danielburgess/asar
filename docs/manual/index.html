@@ -1511,6 +1511,11 @@ mov a,$00</code></pre>
 			<li><code>.d</code> opcode suffix: a 4-byte immediate (<code>lda.d #1</code>). An immediate written as a hex constant with 5 or more digits is also 4 bytes. <code>.l</code> on an immediate is an error.</li>
 			<li><code>mvn</code> and <code>mvp</code> without operands: the 1-byte 832-native block move (no bank bytes). With two operands they stay the 65816 3-byte form.</li>
 			<li><code>xfe</code>: <code>$42 $80</code>, exchange V with E16 and C with E8.</li>
+			<li><code>cpuid</code>: <code>$42 $84</code>.</li>
+			<li>Page 2, the <code>$42</code> prefix: a 24-bit operand (<code>.l</code>, or a value that needs 3 bytes) on <code>a</code>, <code>a,x</code> and <code>a,y</code> forms with no native long opcode gives <code>$42</code>, the page-1 opcode, and 3 address bytes. <code>ldx.l $7E0000</code> is <code>$42 $AE $00 $00 $7E</code>. Forms with a native long opcode stay native (<code>lda.l</code> is <code>$AF</code>).</li>
+			<li><code>[d,x]</code>: the accumulator group with a 24-bit pointer in bank 0, <code>lda [$10,x]</code> is <code>$42 $A1 $10</code>.</li>
+			<li><code>.w</code> on a conditional branch: a 16-bit displacement, <code>beq.w label</code> is <code>$42 $F0</code> and 2 bytes. <code>bra.w</code> is <code>brl</code> (<code>$82</code>).</li>
+			<li><code>jmp.l</code> and <code>jsr.l</code>: <code>jml</code> and <code>jsl</code>. Only with the explicit suffix, because a far <code>jsr</code> needs <code>rtl</code>.</li>
 		</ul>
 		Asar does not track the M, X, E16 and E8 flags. Immediate widths come from the suffix or the constant, as for the 65816.
 		<pre><code class="65c816_asar">arch 65832
