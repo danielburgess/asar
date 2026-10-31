@@ -203,7 +203,7 @@ static bool asblock_pick(char** word, int numwords)
 	recent_opcode_num = 1;
 	
 	if (arch==arch_spc700 || in_spcblock) return asblock_spc700(word, numwords);
-	if (arch==arch_65816) {
+	if (arch_is_65816_family(arch)) {
 		int op_len = 0;
 		string oldword0 = word[0];
 		if(asblock_65816(word, numwords, false, op_len)) {
@@ -298,6 +298,7 @@ int getlenfromchar(char c)
 	if (c=='l') return 3;
 	if (c=='d')
 	{
+		if (arch==arch_65832) return 4;
 		asar_throw_warning(1, warning_id_feature_deprecated, ".d opcode suffix", "this doesn't even make sense");
 		return 4;
 	}
@@ -762,7 +763,7 @@ void initstuff()
 	math_pri=false;
 	math_round=true;
 
-	if (arch==arch_65816) asinit_65816();
+	if (arch_is_65816_family(arch)) asinit_65816();
 	if (arch==arch_spc700) asinit_spc700();
 	if (arch==arch_spc700_inline) asinit_spc700();
 	if (arch==arch_superfx) asinit_superfx();
@@ -799,7 +800,7 @@ void finishpass()
 	else if (pushpcnum && pass == 0) asar_throw_error(pass, error_type_null, error_id_pushpc_without_pullpc);
 	else if (pushnsnum && pass == 0) asar_throw_error(pass, error_type_null, error_id_pushns_without_pullns);
 	freespaceend();
-	if (arch==arch_65816) asend_65816();
+	if (arch_is_65816_family(arch)) asend_65816();
 	if (arch==arch_spc700) asend_spc700();
 	if (arch==arch_spc700_inline) asend_spc700();
 	if (arch==arch_superfx) asend_superfx();
@@ -2650,6 +2651,7 @@ void assembleblock(const char * block, bool isspecialline)
 		if(in_spcblock) asar_throw_error(0, error_type_block, error_id_feature_unavaliable_in_spcblock);
 		if (emulatexkas) asar_throw_warning(0, warning_id_convert_to_asar);
 		if (!stricmp(par, "65816")) { arch=arch_65816; return; }
+		if (!stricmp(par, "65832") || !stricmp(par, "gigacom")) { arch=arch_65832; return; }
 		if (!stricmp(par, "spc700")) { arch=arch_spc700; return; }
 		if (!stricmp(par, "spc700-inline")) { asar_throw_warning(1, warning_id_feature_deprecated, "spc700-inline", " Use spcblock and endspcblock"); arch=arch_spc700_inline; return; }
 		if (!stricmp(par, "spc700-raw")) {

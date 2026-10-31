@@ -17,6 +17,7 @@ void asend_65816()
 }
 
 extern bool fastrom;
+#define giga (arch==arch_65832)
 extern int recent_opcode_num;
 
 bool asblock_65816(char** word, int numwords, bool fake, int& outlen)
@@ -45,10 +46,16 @@ bool asblock_65816(char** word, int numwords, bool fake, int& outlen)
 #define as3(    op, byte) if (is(op) && (len==3 || (!explicitlen && len<3))) { withlen(3); write1((unsigned int)byte); write3(num); return true; }
 //#define as23(   op, byte) if (is(op) && (len==2 || len==3)) { write1(byte); write2(num); return true; }
 #define as32(   op, byte) if (is(op) && ((len<3 && !explicitlen) || len==3)) { withlen(3); write1((unsigned int)byte); write3(num); return true; }
-#define as_a(   op, byte) if (is(op)) { if(!explicitlen && !hexconstant && !fake) asar_throw_warning(0, warning_id_implicitly_sized_immediate); if (len==1) { withlen(1); write1(byte); write1(num); } \
+// 65832: 4-byte immediate from .d, or from a bare hex constant of 5+ digits
+#define imm_is_32() (giga && (len==4 || (len==3 && hexconstant && !explicitlen)))
+#define as_imm( op, byte) if (is(op)) { if(!explicitlen && !hexconstant && !fake) asar_throw_warning(0, warning_id_implicitly_sized_immediate); \
+																					 if (giga && len==3 && explicitlen) asar_throw_error(0, error_type_block, error_id_invalid_opcode_length); \
+																					 if (len==1) { withlen(1); write1(byte); write1(num); } \
+																					 else if (imm_is_32()) { withlen(4); write1((unsigned int)byte); write4(num); } \
 																					 else { withlen(2); write1((unsigned int)byte); write2(num); } return true; }
-#define as_xy(  op, byte) if (is(op)) { if(!explicitlen && !hexconstant && !fake) asar_throw_warning(0, warning_id_implicitly_sized_immediate); if (len==1) { withlen(1); write1(byte); write1(num); } \
-																					 else { withlen(2); write1((unsigned int)byte); write2(num); } return true; }
+#define as_a(   op, byte) as_imm(op, byte)
+#define as_xy(  op, byte) as_imm(op, byte)
+#define as0_p2( op, byte) if (is(op)) { withlen(1); write1(0x42u); write1((unsigned int)byte); return true; }
 #define as_rep( op, byte) if (is(op)) { if (pass<2 && !fake) { num=getnum(par); } if(foundlabel) asar_throw_error(0, error_type_block, error_id_no_labels_here); withlen(0); for (unsigned int i=0;i<num;i++) { write1((unsigned int)byte); } recent_opcode_num = num; return true; }
 #define as_rel1(op, byte) if (is(op)) { int pos=(!foundlabel)?(int)num:(int)num-((snespos&0xFFFFFF)+2); withlen(1); write1((unsigned int)byte); write1((unsigned int)pos); \
 													if (pass==2 && foundlabel && (pos<-128 || pos>127)) asar_throw_error(2, error_type_block, error_id_relative_branch_out_of_bounds, dec(pos).data()); \
@@ -80,6 +87,12 @@ bool asblock_65816(char** word, int numwords, bool fake, int& outlen)
 		as0("WAI", 0xCB); as0("CLD", 0xD8); as0("PHX", 0xDA); as0("STP", 0xDB);
 		as0("INX", 0xE8); as0("NOP", 0xEA); as0("XBA", 0xEB); as0("SED", 0xF8);
 		as0("PLX", 0xFA); as0("XCE", 0xFB);
+		if (giga)
+		{
+			// 832 native block move: no bank bytes
+			as0("MVN", 0x54); as0("MVP", 0x44);
+			as0_p2("XFE", 0x80);
+		}
 		as1("BRK", 0x00); as1("COP", 0x02); as1("WDM", 0x42);
 		//as0("DEA", 0x3A); as0("INA", 0x1A); as0("TAD", 0x5B); as0("TDA", 0x7B);//nobody cares about these, but keeping them does no harm
 		//as0("TAS", 0x1B); as0("TSA", 0x3B); as0("SWA", 0xEB);                  //actually, it does: it may make some users think it's correct.

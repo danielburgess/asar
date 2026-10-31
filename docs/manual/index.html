@@ -1505,6 +1505,20 @@ lda $00
 
 arch spc700
 mov a,$00</code></pre>
+		<h4 id="arch-65832">GigaCom 65832 (W65C832 native mode)</h4>
+		<code>arch 65832</code> (alias <code>arch gigacom</code>) assembles the 65816 instruction set plus the GigaCom 32-bit extensions. Every 65816 opcode encodes the same as under <code>arch 65816</code>. The extensions:
+		<ul>
+			<li><code>.d</code> opcode suffix: a 4-byte immediate (<code>lda.d #1</code>). An immediate written as a hex constant with 5 or more digits is also 4 bytes. <code>.l</code> on an immediate is an error.</li>
+			<li><code>mvn</code> and <code>mvp</code> without operands: the 1-byte 832-native block move (no bank bytes). With two operands they stay the 65816 3-byte form.</li>
+			<li><code>xfe</code>: <code>$42 $80</code>, exchange V with E16 and C with E8.</li>
+		</ul>
+		Asar does not track the M, X, E16 and E8 flags. Immediate widths come from the suffix or the constant, as for the 65816.
+		<pre><code class="65c816_asar">arch 65832
+clc : xce : clv : sec : xfe	; 832 native, A 8/32
+rep #$30
+lda.d #$10000000
+ldx #$12345678			; 8 hex digits: 4-byte immediate
+mvn				; 1-byte block move</code></pre>
 		<h4 id="number-literals">Number Literals</h4>
 		Asar supports decimal, hexadecimal and binary number literals. Hexadecimal literals use <code>$</code> as a prefix, binary literals use <code>%</code> as a prefix. Number literals can be made positive or negative by prefixing a <code>+</code> or a <code>-</code> (without a sign, positive is assumed). They can also be prefixed with a <code>~</code> to get their unary complement (a 32-bit integer with all the bits inverted).
 		<pre><code class="65c816_asar">lda $00
