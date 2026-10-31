@@ -4,6 +4,7 @@
 ;`errEunknown_command
 ;`errEunknown_command
 ;`errEunknown_command
+;`errEunknown_command
 org $008000
 arch 65816
 xfe
@@ -14,3 +15,4 @@ lda.d $1234
 arch 65816
 ldx.l $123456
 cpuid
+jsl ($1234,x)

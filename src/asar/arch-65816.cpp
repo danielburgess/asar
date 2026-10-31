@@ -218,7 +218,7 @@ bool asblock_65816(char** word, int numwords, bool fake, int& outlen)
 		init_index("(", ",x)");
 		the8(0x01, 1);
 		as2("JMP", 0x7C); as2("JSR", 0xFC);
-		if (giga && gigacom_ext) asp2("JSL", 0xFC);
+		if (giga) asp2("JSL", 0xFC);
 		end();
 	}
 	else if (match("(", ")") && confirmqpar(substr(word[1]+1, (int)(strlen(word[1]+1)-1))))

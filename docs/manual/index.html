@@ -1512,6 +1512,7 @@ mov a,$00</code></pre>
 			<li><code>mvn</code> and <code>mvp</code> without operands: the 1-byte 832-native block move (no bank bytes). With two operands they stay the 65816 3-byte form.</li>
 			<li><code>xfe</code>: <code>$42 $80</code>, exchange V with E16 and C with E8.</li>
 			<li><code>cpuid</code>: <code>$42 $84</code>.</li>
+			<li><code>jsl ($1234,x)</code>: <code>$42 $FC</code>, a 3-byte pointer at PBR:(a + X). Return with <code>rtl</code>.</li>
 			<li>Page 2, the <code>$42</code> prefix: a 24-bit operand (<code>.l</code>, or a value that needs 3 bytes) on <code>a</code>, <code>a,x</code> and <code>a,y</code> forms with no native long opcode gives <code>$42</code>, the page-1 opcode, and 3 address bytes. <code>ldx.l $7E0000</code> is <code>$42 $AE $00 $00 $7E</code>. Forms with a native long opcode stay native (<code>lda.l</code> is <code>$AF</code>).</li>
 			<li><code>[d,x]</code>: the accumulator group with a 24-bit pointer in bank 0, <code>lda [$10,x]</code> is <code>$42 $A1 $10</code>.</li>
 			<li><code>.w</code> on a conditional branch: a 16-bit displacement, <code>beq.w label</code> is <code>$42 $F0</code> and 2 bytes. <code>bra.w</code> is <code>brl</code> (<code>$82</code>).</li>
@@ -1521,7 +1522,6 @@ mov a,$00</code></pre>
 		<ul>
 			<li>Page 3, PC-relative: <code>@label</code> gives <code>$42 $42</code>, the page-1 opcode and a signed 16-bit displacement from the end of the instruction. Forms: <code>lda @label</code>, <code>lda @label,x</code>, <code>lda @label,y</code> (every <code>a</code>, <code>a,x</code>, <code>a,y</code> opcode), <code>jsr @label</code>, <code>jmp (@label)</code>, <code>jml [@label]</code>, <code>jmp (@label,x)</code>, <code>jsr (@label,x)</code>. <code>jmp @label</code> is <code>brl</code>.</li>
 			<li><code>lea @label</code> (<code>$42 $82</code>) and <code>pel @label</code> (<code>$42 $83</code>), with a 16-bit displacement.</li>
-			<li><code>jsl ($1234,x)</code>: <code>$42 $FC</code>, a 24-bit pointer.</li>
 		</ul>
 		Asar does not track the M, X, E16 and E8 flags. Immediate widths come from the suffix or the constant, as for the 65816.
 		<pre><code class="65c816_asar">arch 65832
