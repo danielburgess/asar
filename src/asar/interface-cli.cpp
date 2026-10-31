@@ -118,7 +118,8 @@ int main(int argc, char * argv[])
 	{
 		romdata_r = nullptr;
 		string version=STR"Asar "+dec(asarver_maj)+"."+dec(asarver_min)+((asarver_bug>=10 || asarver_min>=10)?".":"")+
-				dec(asarver_bug)+(asarver_beta?"pre":"")+", originally developed by Alcaro, maintained by Asar devs.\n"+
+				dec(asarver_bug)+(asarver_beta?"pre":"")+asarver_tag+", originally developed by Alcaro, maintained by Asar devs.\n"+
+				"GigaCom 65832 extensions: https://github.com/danielburgess/asar (branch gigacom-65832)\n"+
 				"Source code: https://github.com/RPGHacker/asar\n";
 		char * myname=argv[0];
 		if (strrchr(myname, '/')) myname=strrchr(myname, '/')+1;

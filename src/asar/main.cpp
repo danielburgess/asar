@@ -21,6 +21,7 @@ const int asarver_maj=1;
 const int asarver_min=9;
 const int asarver_bug=1;
 const bool asarver_beta=false;
+const char * const asarver_tag="ex"; // GigaCom 65832 fork
 bool default_math_pri=false;
 bool default_math_round_off=false;
 extern bool suppress_all_warnings;

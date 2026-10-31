@@ -73,6 +73,7 @@ extern const int asarver_maj;
 extern const int asarver_min;
 extern const int asarver_bug;
 extern const bool asarver_beta;
+extern const char * const asarver_tag;
 extern bool default_math_pri;
 extern bool default_math_round_off;
 
